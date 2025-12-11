@@ -72,9 +72,18 @@ if submitted:
         final_input = np.hstack([X_num_scaled, np.array([cat_encoded])])
 
         # ---- XGBOOST PREDICTION ----
-        dtest = xgb.DMatrix(final_input)
-        prob = float(booster.predict(dtest)[0])
-        pred = 1 if prob > 0.5 else 0
+# FINAL INPUT VECTOR
+final_input = np.hstack([X_num_scaled, np.array([cat_encoded])])
+
+# FEATURE NAMES IN CORRECT ORDER
+all_features = numeric_features + categorical_features
+
+# CREATE DMATRIX WITH FEATURE NAMES
+dtest = xgb.DMatrix(final_input, feature_names=all_features)
+
+# PREDICT
+prob = float(booster.predict(dtest)[0])
+pred = 1 if prob > 0.5 else 0
 
         # ---- DISPLAY RESULTS ----
         st.success("Prediction Complete")
