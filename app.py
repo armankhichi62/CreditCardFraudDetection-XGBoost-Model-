@@ -83,7 +83,8 @@ if submitted:
 
         # PREDICT
         prob = float(booster.predict(dtest)[0])
-        pred = 1 if prob > 0.5 else 0
+        THRESHOLD = 0.30
+        pred = 1 if prob > THRESHOLD else 0
 
         # ---- DISPLAY RESULTS ----
         st.success("Prediction Complete")
