@@ -12,7 +12,7 @@ st.set_page_config(page_title="Fraud Detection - XGBoost", layout="centered")
 @st.cache_resource
 def load_artifacts():
     booster = xgb.Booster()
-    booster.load_model("xgb_model.json")   # your booster file
+    booster.load_model("xgb_model (1).json")   # your booster file
 
     with open("scaler.pkl", "rb") as f:
         scaler = pickle.load(f)
