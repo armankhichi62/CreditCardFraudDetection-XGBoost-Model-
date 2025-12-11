@@ -6,22 +6,26 @@ import xgboost as xgb
 
 st.set_page_config(page_title="Fraud Detection - XGBoost", layout="centered")
 
-# Load artifacts
+# Load all artifacts (model + preprocessors)
 @st.cache_resource
 def load_artifacts():
-booster = xgb.Booster()
-booster.load_model("xgb_model.json")
+    booster = xgb.Booster()
+    booster.load_model("xgb_model.json")
 
     with open("scaler.pkl", "rb") as f:
         scaler = pickle.load(f)
+
     with open("encoders.pkl", "rb") as f:
         encoders = pickle.load(f)
+
     with open("features.pkl", "rb") as f:
         features = pickle.load(f)
 
-    return model, scaler, encoders, features
+    return booster, scaler, encoders, features
 
-model, scaler, encoders, features = load_artifacts()
+
+# ---- LOAD MODEL & PREPROCESSORS ----
+booster, scaler, encoders, features = load_artifacts()
 
 numeric_features = features["numeric"]
 categorical_features = features["categorical"]
@@ -46,27 +50,33 @@ with st.form("input_form"):
 
 if submitted:
     try:
-        # Scale numeric inputs
+        # ---- PREPARE NUMERIC FEATURES ----
         X_num = np.array([[num_inputs[c] for c in numeric_features]])
         X_num_scaled = scaler.transform(X_num)
 
-        # Encode categorical
+        # ---- ENCODE CATEGORICAL FEATURES ----
         cat_encoded = []
         for col in categorical_features:
             le = encoders[col]
             val = str(cat_inputs[col])
+
             if val in le.classes_:
                 enc = int(le.transform([val])[0])
             else:
+                # fallback for unseen category
                 enc = int(le.transform([le.classes_[0]])[0])
+
             cat_encoded.append(enc)
 
+        # ---- FINAL INPUT VECTOR ----
         final_input = np.hstack([X_num_scaled, np.array([cat_encoded])])
 
-        # Predict
-        prob = float(model.predict_proba(final_input)[0][1])
+        # ---- XGBOOST PREDICTION ----
+        dtest = xgb.DMatrix(final_input)
+        prob = float(booster.predict(dtest)[0])
         pred = 1 if prob > 0.5 else 0
 
+        # ---- DISPLAY RESULTS ----
         st.success("Prediction Complete")
         st.write(f"**Fraud Probability:** {prob:.4f}")
         st.write(f"**Prediction:** {'FRAUD' if pred==1 else 'LEGIT'}")
